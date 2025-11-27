@@ -19,8 +19,8 @@
         
         #gameContainer {
             position: relative;
-            width: 800px;
-            height: 600px;
+            width: 1024px;
+            height: 768px;
             background: #1a0f08;
             border: 3px solid #8b6914;
             border-radius: 10px;
@@ -48,25 +48,27 @@
             border-radius: 5px;
             padding: 10px;
             color: #f4e4c1;
-            font-size: 14px;
+            font-size: 16px;
             pointer-events: auto;
         }
         
         #score {
-            top: 10px;
-            left: 10px;
+            top: 20px;
+            left: 20px;
+            font-weight: bold;
         }
         
         #materials {
             top: 60px;
-            left: 10px;
+            left: 20px;
+            white-space: pre-line;
         }
         
         #craftingPanel {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 300px;
+            width: 350px;
             display: none;
         }
         
@@ -74,7 +76,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 400px;
+            width: 450px;
             display: none;
             text-align: center;
         }
@@ -83,16 +85,22 @@
             background: #8b6914;
             color: #f4e4c1;
             border: none;
-            padding: 8px 16px;
-            margin: 5px;
-            border-radius: 3px;
+            padding: 12px 20px;
+            margin: 8px;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 14px;
-            transition: background 0.3s;
+            font-size: 16px;
+            transition: all 0.3s;
+            min-width: 120px;
         }
         
         .button:hover {
             background: #a67c17;
+            transform: scale(1.05);
+        }
+        
+        .button:active {
+            transform: scale(0.95);
         }
         
         #startScreen, #victoryScreen, #defeatScreen {
@@ -111,38 +119,53 @@
         
         h1 {
             color: #f4e4c1;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            margin-bottom: 30px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+            font-size: 36px;
         }
         
         .instructions {
-            max-width: 400px;
-            margin-bottom: 30px;
-            line-height: 1.5;
+            max-width: 500px;
+            margin-bottom: 40px;
+            line-height: 1.6;
+            font-size: 18px;
         }
         
         .hidden {
             display: none !important;
         }
+        
+        .panel-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #f4e4c1;
+        }
+        
+        .echo-text {
+            font-style: italic;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <canvas id="gameCanvas" width="1024" height="768"></canvas>
         
         <div id="ui">
             <div id="score" class="ui-element">Score: 0</div>
             <div id="materials" class="ui-element">Materials:</div>
             
             <div id="craftingPanel" class="ui-element">
-                <h3>Crafting Options</h3>
+                <div class="panel-title" id="stationTitle">Crafting Options</div>
                 <div id="craftingButtons"></div>
                 <button class="button" onclick="closeCraftingPanel()">Close</button>
             </div>
             
             <div id="echoPanel" class="ui-element">
-                <h3>Echo Discovered</h3>
-                <p id="echoText"></p>
+                <div class="panel-title">Echo Discovered</div>
+                <div class="echo-text" id="echoText"></div>
                 <button class="button" onclick="closeEchoPanel()">Close</button>
             </div>
         </div>
@@ -151,10 +174,12 @@
             <h1>Forge of the Thousand Echoes</h1>
             <div class="instructions">
                 A narrative crafting RPG where weapons carry memories of past wielders.<br><br>
-                Use WASD to move your blacksmith<br>
+                <strong>Controls:</strong><br>
+                Use WASD or Arrow Keys to move your blacksmith<br>
                 Walk into forge stations to craft weapons<br>
                 Discover echoes to unlock stories and abilities<br>
-                Complete 5 crafting steps to forge a legendary weapon
+                Complete 5 crafting steps to forge a legendary weapon<br>
+                Manage your materials wisely - running out means defeat!
             </div>
             <button class="button" onclick="startGame()">Start Forging</button>
             <button class="button" onclick="closeGame()">Close</button>
@@ -162,8 +187,8 @@
         
         <div id="victoryScreen" class="hidden">
             <h1>Legendary Weapon Forged!</h1>
-            <p id="finalScore">Final Score: 0</p>
-            <p id="finalEchoes">Echoes Discovered: 0</p>
+            <p id="finalScore" style="font-size: 20px; margin: 10px;">Final Score: 0</p>
+            <p id="finalEchoes" style="font-size: 20px; margin: 10px;">Echoes Discovered: 0</p>
             <button class="button" onclick="restartGame()">Forge Again</button>
             <button class="button" onclick="mainMenu()">Main Menu</button>
             <button class="button" onclick="closeGame()">Close</button>
@@ -171,7 +196,7 @@
         
         <div id="defeatScreen" class="hidden">
             <h1>Materials Depleted</h1>
-            <p id="defeatScore">Final Score: 0</p>
+            <p id="defeatScore" style="font-size: 20px; margin: 10px;">Final Score: 0</p>
             <button class="button" onclick="restartGame()">Try Again</button>
             <button class="button" onclick="mainMenu()">Main Menu</button>
             <button class="button" onclick="closeGame()">Close</button>
@@ -182,7 +207,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Game state
+        // Game state matching Godot implementation
         let gameState = 'start';
         let score = 0;
         let materials = {
@@ -190,49 +215,80 @@
             'Mystic Crystal': 2,
             'Ancient Wood': 3
         };
-        let echoes = [];
+        let discoveredEchoes = [];
+        let forgingProgress = 0.0;
         let craftingSteps = 0;
         let currentStation = null;
         
-        // Player
+        // Player matching Godot CharacterBody2D
         const player = {
-            x: 400,
-            y: 300,
-            size: 30,
-            speed: 3,
-            color: '#cc9966'
+            x: 512,
+            y: 384,
+            size: 40,
+            speed: 150, // pixels per second (matching Godot SPEED)
+            color: '#cc9966',
+            velocity: { x: 0, y: 0 }
         };
         
-        // Forge stations
+        // Forge stations matching Godot scene
         const stations = [
-            { name: 'Anvil', x: 150, y: 250, size: 40, color: '#808080' },
-            { name: 'Grindstone', x: 400, y: 150, size: 40, color: '#b3b3b3' },
-            { name: 'Quench Tank', x: 650, y: 250, size: 40, color: '#3366cc' }
+            { name: 'Anvil', x: 200, y: 300, size: 50, color: '#808080', active: false },
+            { name: 'Grindstone', x: 512, y: 200, size: 50, color: '#b3b3b3', active: false },
+            { name: 'Quench Tank', x: 800, y: 300, size: 50, color: '#3366cc', active: false }
         ];
         
-        // Input handling
+        // Input handling matching Godot input system
         const keys = {};
-        document.addEventListener('keydown', (e) => keys[e.key.toLowerCase()] = true);
-        document.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            keys[e.code] = true; // For arrow keys
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+            keys[e.code] = false;
+        });
         
-        function updatePlayer() {
-            if (keys['w']) player.y -= player.speed;
-            if (keys['s']) player.y += player.speed;
-            if (keys['a']) player.x -= player.speed;
-            if (keys['d']) player.x += player.speed;
+        let lastTime = 0;
+        
+        function updatePlayer(deltaTime) {
+            // Reset velocity
+            player.velocity.x = 0;
+            player.velocity.y = 0;
+            
+            // Handle input matching Godot's Input.get_axis()
+            const horizontalAxis = (keys['d'] ? 1 : 0) - (keys['a'] ? 1 : 0) + 
+                                  (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
+            const verticalAxis = (keys['s'] ? 1 : 0) - (keys['w'] ? 1 : 0) + 
+                                (keys['ArrowDown'] ? 1 : 0) - (keys['ArrowUp'] ? 1 : 0);
+            
+            // Apply velocity
+            if (horizontalAxis !== 0) {
+                player.velocity.x = horizontalAxis * player.speed;
+            }
+            if (verticalAxis !== 0) {
+                player.velocity.y = verticalAxis * player.speed;
+            }
+            
+            // Update position (simplified move_and_slide)
+            player.x += player.velocity.x * deltaTime;
+            player.y += player.velocity.y * deltaTime;
             
             // Keep player in bounds
             player.x = Math.max(player.size/2, Math.min(canvas.width - player.size/2, player.x));
             player.y = Math.max(player.size/2, Math.min(canvas.height - player.size/2, player.y));
             
-            // Check station collisions
+            // Check station collisions (matching Godot Area2D body_entered)
             currentStation = null;
             for (const station of stations) {
                 const dist = Math.sqrt(Math.pow(player.x - station.x, 2) + Math.pow(player.y - station.y, 2));
                 if (dist < (player.size + station.size) / 2) {
                     currentStation = station;
-                    showCraftingPanel(station.name);
-                    break;
+                    if (!station.active) {
+                        station.active = true;
+                        showCraftingPanel(station.name);
+                    }
+                } else {
+                    station.active = false;
                 }
             }
             
@@ -242,48 +298,59 @@
         }
         
         function draw() {
-            // Clear canvas
+            // Clear canvas with forge background
             ctx.fillStyle = '#2c1810';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
             // Draw forge floor pattern
             ctx.strokeStyle = '#1a0f08';
             ctx.lineWidth = 2;
-            for (let i = 0; i < canvas.width; i += 50) {
+            for (let i = 0; i < canvas.width; i += 60) {
                 ctx.beginPath();
                 ctx.moveTo(i, 0);
                 ctx.lineTo(i, canvas.height);
                 ctx.stroke();
             }
-            for (let i = 0; i < canvas.height; i += 50) {
+            for (let i = 0; i < canvas.height; i += 60) {
                 ctx.beginPath();
                 ctx.moveTo(0, i);
                 ctx.lineTo(canvas.width, i);
                 ctx.stroke();
             }
             
-            // Draw stations
+            // Draw stations with glow effect when active
             for (const station of stations) {
+                // Glow effect
+                if (station.active) {
+                    ctx.shadowColor = '#f4e4c1';
+                    ctx.shadowBlur = 20;
+                }
+                
                 ctx.fillStyle = station.color;
                 ctx.fillRect(station.x - station.size/2, station.y - station.size/2, station.size, station.size);
                 
+                ctx.shadowBlur = 0;
+                
                 // Station label
                 ctx.fillStyle = '#f4e4c1';
-                ctx.font = '12px Arial';
+                ctx.font = 'bold 14px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(station.name, station.x, station.y - station.size/2 - 5);
+                ctx.fillText(station.name, station.x, station.y - station.size/2 - 10);
             }
             
-            // Draw player
+            // Draw player with highlight when near station
+            if (currentStation) {
+                ctx.strokeStyle = '#f4e4c1';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(player.x - player.size/2 - 3, player.y - player.size/2 - 3, player.size + 6, player.size + 6);
+            }
+            
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
             
-            // Draw player highlight if near station
-            if (currentStation) {
-                ctx.strokeStyle = '#f4e4c1';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(player.x - player.size/2 - 2, player.y - player.size/2 - 2, player.size + 4, player.size + 4);
-            }
+            // Draw player details (blacksmith apron)
+            ctx.fillStyle = '#8b4513';
+            ctx.fillRect(player.x - player.size/3, player.y - player.size/3, player.size*2/3, player.size*2/3);
         }
         
         function updateUI() {
@@ -299,8 +366,10 @@
         function showCraftingPanel(stationName) {
             const panel = document.getElementById('craftingPanel');
             const buttonsDiv = document.getElementById('craftingButtons');
+            const stationTitle = document.getElementById('stationTitle');
             
             panel.style.display = 'block';
+            stationTitle.textContent = `${stationName} - Crafting Options`;
             buttonsDiv.innerHTML = '';
             
             const options = getCraftingOptions(stationName);
@@ -313,9 +382,7 @@
             }
         }
         
-        function
-
-function closeCraftingPanel() {
+        function closeCraftingPanel() {
             document.getElementById('craftingPanel').style.display = 'none';
         }
         
@@ -323,8 +390,8 @@ function closeCraftingPanel() {
             const options = [];
             switch(stationName) {
                 case 'Anvil':
-                    options.push({ text: 'Forge Blade', action: 'forge_blade' });
-                    options.push({ text: 'Forge Hammer', action: 'forge_hammer' });
+                    options.push({ text: 'Forge Blade (2 Iron Ore)', action: 'forge_blade' });
+                    options.push({ text: 'Forge Hammer (3 Iron, 1 Wood)', action: 'forge_hammer' });
                     break;
                 case 'Grindstone':
                     options.push({ text: 'Sharpen Weapon', action: 'sharpen' });
@@ -347,7 +414,7 @@ function closeCraftingPanel() {
                     if (materials['Iron Ore'] >= 2) {
                         materials['Iron Ore'] -= 2;
                         score += 100;
-                        echoText = 'The blade remembers a knight\'s final stand...';
+                        echoText = 'The blade remembers a knight\'s final stand against impossible odds...';
                         success = true;
                     }
                     break;
@@ -356,44 +423,44 @@ function closeCraftingPanel() {
                         materials['Iron Ore'] -= 3;
                         materials['Ancient Wood'] -= 1;
                         score += 150;
-                        echoText = 'This hammer once shattered the gates of an ancient fortress...';
+                        echoText = 'This hammer once shattered the gates of an ancient fortress, its echoes still resonate with power...';
                         success = true;
                     }
                     break;
                 case 'sharpen':
                     score += 50;
-                    echoText = 'A warrior\'s prayer echoes from the edge...';
+                    echoText = 'A warrior\'s prayer echoes from the newly sharpened edge, promising protection to its next wielder...';
                     success = true;
                     break;
                 case 'polish':
                     score += 75;
-                    echoText = 'The reflection shows faces of past wielders...';
+                    echoText = 'The reflection shows faces of past wielders, their stories etched into the polished surface...';
                     success = true;
                     break;
                 case 'water_quench':
                     score += 60;
-                    echoText = 'Steam rises like the breath of a dragon...';
+                    echoText = 'Steam rises like the breath of a dragon as the metal cools, ancient memories awakening in the heat...';
                     success = true;
                     break;
                 case 'oil_quench':
                     score += 80;
-                    echoText = 'The oil preserves memories of ancient battles...';
+                    echoText = 'The oil preserves memories of ancient battles, each drop containing a story of valor and sacrifice...';
                     success = true;
                     break;
             }
             
             if (success) {
                 craftingSteps++;
-                echoes.push(echoText);
+                discoveredEchoes.push(echoText);
                 showEchoPanel(echoText);
                 updateUI();
                 
-                // Check victory condition
+                // Check victory condition (matching Godot logic)
                 if (craftingSteps >= 5) {
                     showVictoryScreen();
                 }
                 
-                // Check defeat condition
+                // Check defeat condition (matching Godot logic)
                 let totalMaterials = Object.values(materials).reduce((sum, amount) => sum + amount, 0);
                 if (totalMaterials === 0 && craftingSteps < 5) {
                     showDefeatScreen();
@@ -416,13 +483,14 @@ function closeCraftingPanel() {
         function startGame() {
             gameState = 'playing';
             document.getElementById('startScreen').classList.add('hidden');
+            lastTime = performance.now();
             gameLoop();
         }
         
         function showVictoryScreen() {
             gameState = 'victory';
             document.getElementById('finalScore').textContent = `Final Score: ${score}`;
-            document.getElementById('finalEchoes').textContent = `Echoes Discovered: ${echoes.length}`;
+            document.getElementById('finalEchoes').textContent = `Echoes Discovered: ${discoveredEchoes.length}`;
             document.getElementById('victoryScreen').classList.remove('hidden');
         }
         
@@ -433,17 +501,18 @@ function closeCraftingPanel() {
         }
         
         function restartGame() {
-            // Reset game state
+            // Reset game state (matching Global.reset_game())
             score = 0;
             materials = {
                 'Iron Ore': 5,
                 'Mystic Crystal': 2,
                 'Ancient Wood': 3
             };
-            echoes = [];
+            discoveredEchoes = [];
+            forgingProgress = 0.0;
             craftingSteps = 0;
-            player.x = 400;
-            player.y = 300;
+            player.x = 512;
+            player.y = 384;
             
             // Hide all screens
             document.getElementById('victoryScreen').classList.add('hidden');
@@ -452,6 +521,7 @@ function closeCraftingPanel() {
             
             gameState = 'playing';
             updateUI();
+            lastTime = performance.now();
             gameLoop();
         }
         
@@ -465,13 +535,16 @@ function closeCraftingPanel() {
         }
         
         function closeGame() {
-            // In a real implementation, this would close the game
+            // Simulating get_tree().quit()
             document.body.innerHTML = '<div style="text-align: center; margin-top: 200px; color: #f4e4c1;"><h2>Game Closed</h2><p>Thank you for playing Forge of the Thousand Echoes</p></div>';
         }
         
-        function gameLoop() {
+        function gameLoop(currentTime) {
             if (gameState === 'playing') {
-                updatePlayer();
+                const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+                lastTime = currentTime;
+                
+                updatePlayer(deltaTime);
                 draw();
                 requestAnimationFrame(gameLoop);
             }
@@ -480,3 +553,5 @@ function closeCraftingPanel() {
         // Initialize
         updateUI();
     </script>
+</body>
+</html>
