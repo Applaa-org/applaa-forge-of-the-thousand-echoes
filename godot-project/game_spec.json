@@ -1,0 +1,44 @@
+{
+  "game": {
+    "name": "Forge of the Thousand Echoes",
+    "type": "2D",
+    "genre": "narrative crafting RPG",
+    "description": "A narrative crafting RPG where every crafted weapon carries echoes of previous wielders. Players forge equipment in multi-step processes, unlocking memories that shape abilities and choices."
+  },
+  "settings": {
+    "window": {"width": 1024, "height": 768},
+    "physics": {"gravity": 980}
+  },
+  "player": {
+    "name": "Blacksmith",
+    "health": 100,
+    "speed": 150,
+    "abilities": ["forge", "craft", "discover_echoes"]
+  },
+  "entities": {
+    "materials": [
+      {"name": "Iron Ore", "value": 10, "type": "metal"},
+      {"name": "Mystic Crystal", "value": 50, "type": "magic"},
+      {"name": "Ancient Wood", "value": 25, "type": "organic"}
+    ],
+    "weapons": [
+      {"name": "Echo Blade", "damage": 25, "echoes": 3},
+      {"name": "Memory Hammer", "damage": 35, "echoes": 5}
+    ]
+  },
+  "levels": [
+    {
+      "name": "The Forge",
+      "background": "forge",
+      "stations": ["anvil", "grindstone", "quench"]
+    }
+  ],
+  "logic": {
+    "winCondition": "forge_legendary_weapon",
+    "loseCondition": "run_out_of_materials",
+    "scoring": {
+      "pointsPerCraft": 100,
+      "pointsPerEcho": 50
+    }
+  }
+}
